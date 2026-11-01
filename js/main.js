@@ -1,6 +1,7 @@
 import { loadContent, subscribeToContent } from "./content.js";
 import { loadRepositories, renderRepositories } from "./github.js";
 import { getCertificatePublicUrl, loadCertificates, makeCertificateDownloadUrl, subscribeToCertificates } from "./certificates.js";
+import { diplomaUrl, loadDiplomas } from "./diplomas.js";
 
 const iconPaths = {
   Instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/>',
@@ -36,6 +37,12 @@ function setView(view) {
 }
 
 navButtons.forEach((button) => button.addEventListener("click", () => setView(button.dataset.view)));
+const navigateSection = (step) => {
+  const current = Math.max(0, navButtons.findIndex((button) => button.classList.contains("active")));
+  setView(navButtons[(current + step + navButtons.length) % navButtons.length].dataset.view);
+};
+document.getElementById("section-previous").addEventListener("click", () => navigateSection(-1));
+document.getElementById("section-next").addEventListener("click", () => navigateSection(1));
 document.querySelectorAll("[data-navigate]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.navigate)));
 menuToggle.addEventListener("click", () => {
   const open = menuToggle.getAttribute("aria-expanded") !== "true";
@@ -162,6 +169,14 @@ async function initializeCertificates() {
     console.info("No se pudo cargar la lista de certificados.", error);
     renderCertificates(null, true);
   }
+  try {
+    const diplomas = await loadDiplomas();
+    const grid = document.getElementById("diplomas-grid");
+    const valid = diplomas.filter((row) => diplomaUrl(row));
+    document.getElementById("diploma-count").textContent = `PDF · ${String(valid.length).padStart(2, "0")}`;
+    grid.innerHTML = valid.length ? valid.map((row) => `<article class="certificate-card"><div class="certificate-preview"><iframe src="${escapeHTML(diplomaUrl(row))}#page=1&toolbar=0" title="Vista previa: ${escapeHTML(row.title)}" loading="lazy"></iframe></div><div class="certificate-card-body"><h2>${escapeHTML(row.title)}</h2><button class="button button-primary" type="button" data-open-diploma="${escapeHTML(row.id)}">Ver diploma</button></div></article>`).join("") : '<div class="certificate-empty"><h2>Aún no hay diplomas</h2></div>';
+    grid.addEventListener("click", (event) => { const button = event.target.closest("[data-open-diploma]"); const row = valid.find((item) => item.id === button?.dataset.openDiploma); if (!row) return; const url = diplomaUrl(row); certificateDialogTitle.textContent = row.title; certificateFrame.src = `${url}#toolbar=1&navpanes=0&view=FitH`; certificateOpenTab.href = url; certificateDownload.href = makeCertificateDownloadUrl(url, row.title); certificateDialog.showModal(); });
+  } catch { document.getElementById("diplomas-grid").innerHTML = '<div class="certificate-empty"><h2>Diplomas en preparación</h2></div>'; }
 }
 
 async function renderPortfolio(content) {
@@ -200,6 +215,22 @@ async function initialize() {
   const eventCountBeforeRead = liveEvents;
   const content = await loadContent();
   if (eventCountBeforeRead === liveEvents) await renderPortfolio(content);
+  await renderYouTube(content.youtubeChannelId || "");
+}
+
+async function renderYouTube(channelId) {
+  const target = document.getElementById("youtube-content");
+  if (!channelId) return;
+  target.innerHTML = '<p class="certificate-loading">Cargando videos recientes…</p>';
+  try {
+    const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
+    const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`);
+    if (!response.ok) throw new Error("No se pudo consultar el canal.");
+    const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+    const entries = [...xml.querySelectorAll("entry")].slice(0, 13).map((entry) => ({ id: entry.querySelector("videoId")?.textContent, title: entry.querySelector("title")?.textContent || "Video", link: entry.querySelector("link")?.getAttribute("href") }));
+    if (!entries.length) throw new Error("El canal no tiene videos públicos todavía.");
+    target.innerHTML = `<article class="youtube-feature"><h2>${escapeHTML(entries[0].title)}</h2><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(entries[0].id)}" title="${escapeHTML(entries[0].title)}" loading="lazy" allowfullscreen></iframe></article><div class="youtube-grid">${entries.slice(1).map((video) => `<a class="youtube-video" href="${escapeHTML(video.link)}" target="_blank" rel="noopener noreferrer"><img src="https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg" alt="" loading="lazy"><strong>${escapeHTML(video.title)}</strong></a>`).join("")}</div>`;
+  } catch { target.innerHTML = '<p class="certificate-empty">No se pudieron cargar los videos. Revisa el ID del canal y vuelve a intentarlo.</p>'; }
 }
 
 let toastTimer;

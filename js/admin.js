@@ -1,6 +1,7 @@
 import { config } from "./config.js";
 import { checkAdminAccess, getSupabaseClient, loadContent, savePortfolioContent } from "./content.js";
 import { createCertificate, deleteCertificate, getCertificatePublicUrl, loadCertificates, subscribeToCertificates, updateCertificate } from "./certificates.js";
+import { createDiploma, deleteDiploma, loadDiplomas, updateDiplomaTitle } from "./diplomas.js";
 
 const loginView = document.getElementById("login-view");
 const adminApp = document.getElementById("admin-app");
@@ -13,6 +14,7 @@ let currentContent;
 let toastTimer;
 let certificateRows = [];
 let stopCertificateSubscription;
+let diplomaRows = [];
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -70,6 +72,7 @@ function fillProfile(content) {
   });
   document.querySelectorAll("[data-stat]").forEach((input) => { input.value = profile.stats?.[input.dataset.stat] ?? ""; });
   document.querySelectorAll("[data-setting='githubUsername']").forEach((input) => { input.value = content.githubUsername === "TU_USUARIO_GITHUB" ? "" : (content.githubUsername || ""); });
+  document.querySelectorAll("[data-setting='youtubeChannelId']").forEach((input) => { input.value = content.youtubeChannelId || ""; });
   renderSocialEditor(content.socials || config.socials);
   renderList(document.getElementById("experience-editor"), "experience-template", profile.experience);
   renderList(document.getElementById("education-editor"), "education-template", profile.education);
@@ -154,7 +157,7 @@ function collectContent() {
   });
   const socials = [...socialMap.values()].map((item) => ({ ...item, url: item.url || "#" }));
   const settings = {};
-  document.querySelectorAll("[data-setting]").forEach((input) => { settings[input.dataset.setting] = input.value.trim() || "TU_USUARIO_GITHUB"; });
+  document.querySelectorAll("[data-setting]").forEach((input) => { settings[input.dataset.setting] = input.value.trim() || (input.dataset.setting === "githubUsername" ? "TU_USUARIO_GITHUB" : ""); });
   return { ...currentContent, ...settings, profile, socials };
 }
 
@@ -171,9 +174,40 @@ async function authorizeAndOpen(user) {
   loginView.hidden = true;
   adminApp.hidden = false;
   void refreshAdminCertificates();
+  void refreshDiplomas();
   void startCertificateSubscription();
   return true;
 }
+
+async function refreshDiplomas() {
+  const list = document.getElementById("diploma-admin-list");
+  try {
+    diplomaRows = await loadDiplomas();
+    list.innerHTML = diplomaRows.map((row) => `<article class="certificate-admin-row" data-diploma-id="${escapeHTML(row.id)}"><div class="certificate-admin-row-top"><a href="${escapeHTML(row.public_url)}" target="_blank" rel="noopener">Abrir PDF ↗</a><button class="remove-button" type="button" data-diploma-action="delete">Eliminar</button></div><label>Título<input data-diploma-title maxlength="160" value="${escapeHTML(row.title)}"></label><button type="button" data-diploma-action="save">Guardar título</button></article>`).join("") || '<p class="certificate-admin-empty">Todavía no hay diplomas.</p>';
+  } catch (error) { list.textContent = `No se pudo cargar diplomas. Configura portfolio_diplomas y el bucket diplomas en Supabase. ${error.message || ""}`; }
+}
+
+document.getElementById("diploma-upload-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const values = new FormData(form);
+  const status = document.getElementById("diploma-upload-status");
+  try { await createDiploma(String(values.get("title") || ""), values.get("file")); form.reset(); status.textContent = "Diploma agregado."; await refreshDiplomas(); }
+  catch (error) { status.textContent = error.message || "No se pudo guardar el diploma."; }
+});
+
+document.getElementById("diploma-admin-list").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-diploma-action]");
+  if (!button) return;
+  const card = button.closest("[data-diploma-id]");
+  const row = diplomaRows.find((item) => item.id === card?.dataset.diplomaId);
+  if (!row) return;
+  try {
+    if (button.dataset.diplomaAction === "delete") { if (!window.confirm(`¿Eliminar «${row.title}» y su PDF?`)) return; await deleteDiploma(row); }
+    else await updateDiplomaTitle(row.id, card.querySelector("[data-diploma-title]").value);
+    await refreshDiplomas();
+  } catch (error) { window.alert(error.message || "No se pudo actualizar el diploma."); }
+});
 
 document.querySelectorAll("[data-add]").forEach((button) => button.addEventListener("click", () => {
   const key = button.dataset.add;

@@ -368,3 +368,28 @@ El proyecto es estÃ¡tico, por lo que no requiere servidor propio. Disponibilidad
 - El texto recibido desde Supabase y GitHub se escapa antes de renderizarse.
 - Los archivos PDF locales estÃ¡n ignorados por Git para evitar publicar documentos personales por accidente. Los certificados pÃºblicos se cargan desde `/admin/` directamente al bucket de Supabase y no se guardan en el repositorio.
 - El PDF fuente que ya estaba en esta carpeta queda ignorado por Git y no se ofrece como descarga.
+
+## YouTube y diplomas (integración inicial)
+
+El panel guarda youtubeChannelId dentro del contenido portfolio_content; el ID se puede copiar desde la URL del canal o la configuración avanzada de YouTube. La página consulta el feed RSS del canal a través de AllOrigins para resolver CORS, muestra el video más reciente y una cuadrícula de hasta 12 anteriores. Esta lectura depende de un proxy público y de la disponibilidad del RSS.
+
+La sección de diplomas está preparada visualmente, pero la gestión de carga aún requiere crear una tabla y un bucket independientes. No subir archivos hasta completar ese paso y sus políticas RLS.
+
+### Diplomas independientes
+
+En Supabase crea un bucket pÃºblico `diplomas`, tipo MIME `application/pdf` y lÃ­mite 10 MB. Luego abre SQL Editor y ejecuta:
+
+```sql
+create table if not exists public.portfolio_diplomas (id uuid primary key default gen_random_uuid(), title text not null, public_url text not null, file_path text not null unique, created_at timestamptz not null default now(), updated_at timestamptz not null default now());
+alter table public.portfolio_diplomas enable row level security;
+revoke all on public.portfolio_diplomas from anon, authenticated;
+grant select on public.portfolio_diplomas to anon, authenticated;
+grant insert, update, delete on public.portfolio_diplomas to authenticated;
+create policy "Public read diploma metadata" on public.portfolio_diplomas for select to anon, authenticated using (true);
+create policy "Admins insert diplomas" on public.portfolio_diplomas for insert to authenticated with check ((select public.is_portfolio_admin()));
+create policy "Admins update diplomas" on public.portfolio_diplomas for update to authenticated using ((select public.is_portfolio_admin())) with check ((select public.is_portfolio_admin()));
+create policy "Admins delete diplomas" on public.portfolio_diplomas for delete to authenticated using ((select public.is_portfolio_admin()));
+create policy "Admins manage diploma PDFs" on storage.objects for all to authenticated using (bucket_id = 'diplomas' and (select public.is_portfolio_admin())) with check (bucket_id = 'diplomas' and (select public.is_portfolio_admin()));
+```
+
+El panel permite subir, editar el tÃ­tulo y eliminar diplomas por separado de los certificados. El campo Â«ID del canal de YouTubeÂ» guarda `youtubeChannelId` en `portfolio_content`; se consulta el feed RSS mediante AllOrigins, servicio pÃºblico externo sujeto a disponibilidad.

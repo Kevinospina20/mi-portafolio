@@ -35,5 +35,7 @@ export const config = {
   certificatesTable: "portfolio_certificates",
   certificatesBucket: "certificates",
   certificateMaxFileSizeMB: 10,
+  diplomasTable: "portfolio_diplomas",
+  diplomasBucket: "diplomas",
 },
 };

@@ -20,6 +20,7 @@
         <button class="nav-link active" data-view="inicio" aria-current="page">Inicio</button>
         <button class="nav-link" data-view="trayectoria">Trayectoria</button>
         <button class="nav-link" data-view="proyectos">Proyectos</button>
+        <button class="nav-link" data-view="youtube">YouTube</button>
         <button class="nav-link" data-view="certificados">Certificados</button>
         <button class="nav-link" data-view="contacto">Contacto</button>
       </nav>
@@ -71,9 +72,12 @@
 
         <section class="view certificates-view" id="view-certificados" data-view-panel="certificados" aria-labelledby="certificates-title" hidden>
           <div class="page-heading"><p class="section-kicker">APRENDIZAJE EN ACCIÓN <span>04 / 05</span></p><h1 id="certificates-title">Certificados<span class="heading-period">.</span></h1><p>Formación, logros y conocimientos que respaldan mi recorrido profesional.</p></div>
-          <div class="certificates-intro"><span class="certificates-intro-icon" aria-hidden="true">✧</span><p>Una colección de aprendizajes que siguen abriendo caminos. Selecciona cualquier documento para verlo directamente aquí.</p><span class="certificates-intro-count" id="certificate-count">PDF · —</span></div>
+          <div class="repo-header"><div><p class="section-kicker">FORMACIÓN ACADÉMICA</p><h2>Diplomas</h2></div><span class="repo-sort">Documentos PDF</span></div><div class="certificates-intro"><span class="certificates-intro-icon" aria-hidden="true">✧</span><p>Una colección de aprendizajes que siguen abriendo caminos. Selecciona cualquier documento para verlo directamente aquí.</p><span class="certificates-intro-count" id="diploma-count">PDF · —</span></div><div class="certificates-grid" id="diplomas-grid" aria-live="polite"></div>
+          <div class="repo-header certificate-lower-heading"><div><p class="section-kicker">APRENDIZAJE EN ACCIÓN</p><h2>Certificados</h2></div><span class="repo-sort" id="certificate-count">PDF · —</span></div>
           <div class="certificates-grid" id="certificates-grid" aria-live="polite"><div class="certificate-loading"><span class="loader-dot"></span> Cargando certificados…</div></div>
         </section>
+
+        <section class="view" id="view-youtube" data-view-panel="youtube" aria-labelledby="youtube-title" hidden><div class="page-heading"><p class="section-kicker">VIDEOS Y APRENDIZAJES <span>05 / 06</span></p><h1 id="youtube-title">YouTube<span class="heading-period">.</span></h1><p>Videos recientes del canal, actualizados automáticamente.</p></div><div id="youtube-content" class="youtube-content"><p class="certificate-empty">Configura el ID del canal desde el panel de administración.</p></div></section>
 
         <section class="view" id="view-contacto" data-view-panel="contacto" aria-labelledby="contact-title" hidden>
           <div class="page-heading"><p class="section-kicker">UNA CONVERSACIÓN PUEDE SER EL COMIENZO <span>05 / 05</span></p><h1 id="contact-title">Hablemos<span class="heading-period">.</span></h1><p>¿Tienes una idea, una oportunidad o simplemente quieres saludar? Me encantará leerte.</p></div>
@@ -91,5 +95,6 @@
         <footer class="certificate-dialog-footer"><a class="certificate-open-link" id="certificate-open-tab" target="_blank" rel="noopener noreferrer">Abrir en una pestaña nueva ↗</a><a class="certificate-download-link" id="certificate-download" target="_blank" rel="noopener noreferrer">Descargar PDF ↓</a></footer>
       </div>
     </dialog>
+    <div class="quick-navigation" aria-label="Navegación entre secciones"><button type="button" id="section-previous" aria-label="Sección anterior">←</button><button type="button" id="section-next" aria-label="Sección siguiente">→</button></div>
   </body>
 </html>
