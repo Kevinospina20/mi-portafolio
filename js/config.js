@@ -32,5 +32,8 @@ export const config = {
   publishableKey: "sb_publishable_LkxthckV0s83lxkk63m2Qw_7wcbfMnr",
   contentTable: "portfolio_content",
   contentId: "main",
+  certificatesTable: "portfolio_certificates",
+  certificatesBucket: "certificates",
+  certificateMaxFileSizeMB: 10,
 },
 };

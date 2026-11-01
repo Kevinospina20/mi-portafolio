@@ -1,6 +1,6 @@
 # Portafolio personal de Kevin
 
-Web personal responsive para presentar tu perfil, hoja de vida, proyectos de GitHub y redes sociales. Incluye tema oscuro/claro, navegación adaptable a móvil y un diseño editorial con animaciones discretas.
+Web personal responsive para presentar tu perfil, hoja de vida, proyectos de GitHub, certificados y redes sociales. Incluye tema oscuro/claro, navegación adaptable a móvil y un diseño editorial con animaciones discretas.
 
 ## Estructura
 
@@ -16,13 +16,14 @@ Web personal responsive para presentar tu perfil, hoja de vida, proyectos de Git
 ├── js/
 │   ├── config.js       # Perfil, redes, GitHub y claves públicas de Supabase
 │   ├── content.js      # Supabase Auth, contenido, guardado y Realtime
+│   ├── certificates.js # Lectura, visor, carga y gestión de certificados PDF
 │   ├── github.js       # Consulta y tarjetas de repositorios públicos
 │   ├── main.js         # Navegación, tema y contenido público en vivo
 │   └── admin.js        # Login, edición y guardado del dashboard
 └── README.md
 ```
 
-La web no necesita compilación ni instalación de paquetes. Supabase es opcional: sin configurarlo, el sitio usa `js/config.js`. Al conectar una tabla pública de solo lectura, el contenido remoto sobrescribe esos datos locales.
+La web no necesita compilación ni instalación de paquetes. Supabase es opcional para el perfil; los certificados requieren Supabase Database y Storage configurados como se describe más abajo.
 
 ## 1. Personaliza el perfil
 
@@ -204,6 +205,9 @@ El sitio lee una fila JSON pública. El dashboard autentica por email/contraseñ
      publishableKey: "sb_publishable_TU_CLAVE_PUBLICA",
      contentTable: "portfolio_content",
      contentId: "main",
+     certificatesTable: "portfolio_certificates",
+     certificatesBucket: "certificates",
+     certificateMaxFileSizeMB: 10,
    },
    ```
 
@@ -212,7 +216,110 @@ El sitio lee una fila JSON pública. El dashboard autentica por email/contraseñ
 
 El ejemplo SQL reemplaza el JSON de `main` por los valores iniciales del README. Si ya tienes una fila con información que quieras conservar, cambia el bloque `insert ... on conflict ... do update` por `on conflict (id) do nothing` antes de ejecutarlo. Guías oficiales: [Data API y claves](https://supabase.com/docs/guides/api), [Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security), [usuarios de Auth](https://supabase.com/docs/guides/auth/users) y [Postgres Changes en Realtime](https://supabase.com/docs/guides/realtime/postgres-changes).
 
-## 4. Vista previa local
+## 4. Certificados PDF con Supabase Storage
+
+La sección pública **Certificados** lee metadatos de `public.portfolio_certificates` y muestra la primera página del PDF en cada tarjeta. **Ver certificado** abre un visor integrado; también hay enlaces para abrir o descargar el PDF. La página escucha cambios de la tabla por Supabase Realtime.
+
+### Crea el bucket público
+
+1. En tu proyecto de Supabase, abre **Storage** y pulsa **New bucket**.
+2. Escribe `certificates` como nombre.
+3. Activa **Public bucket**. Cualquier persona que tenga el enlace podrá leer los PDFs; sube solo certificados que quieras hacer públicos y no documentos con información privada.
+4. En las restricciones, establece el tamaño máximo en **10 MB** y el tipo MIME permitido en `application/pdf`. La interfaz también comprueba el tamaño, la extensión y la firma del archivo antes de subirlo.
+5. Pulsa **Create bucket**.
+
+### Crea la tabla y sus políticas
+
+Después de completar la configuración del panel `/admin/` de la sección anterior —incluida la función `public.is_portfolio_admin()` y la tabla `portfolio_admins`— abre **SQL Editor → New query** y ejecuta este bloque. No vuelve a crear ni reemplaza los datos de `portfolio_content`.
+
+```sql
+create table if not exists public.portfolio_certificates (
+  id uuid primary key default gen_random_uuid(),
+  title text not null,
+  issuer text not null,
+  issue_date date not null,
+  public_url text not null,
+  file_path text not null unique,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.portfolio_certificates enable row level security;
+revoke all on public.portfolio_certificates from anon, authenticated;
+grant select on public.portfolio_certificates to anon, authenticated;
+grant insert, update, delete on public.portfolio_certificates to authenticated;
+
+drop policy if exists "Anyone can read certificate metadata" on public.portfolio_certificates;
+create policy "Anyone can read certificate metadata"
+on public.portfolio_certificates for select to anon, authenticated
+using (true);
+
+drop policy if exists "Portfolio admins can insert certificates" on public.portfolio_certificates;
+create policy "Portfolio admins can insert certificates"
+on public.portfolio_certificates for insert to authenticated
+with check ((select public.is_portfolio_admin()));
+
+drop policy if exists "Portfolio admins can update certificates" on public.portfolio_certificates;
+create policy "Portfolio admins can update certificates"
+on public.portfolio_certificates for update to authenticated
+using ((select public.is_portfolio_admin()))
+with check ((select public.is_portfolio_admin()));
+
+drop policy if exists "Portfolio admins can delete certificates" on public.portfolio_certificates;
+create policy "Portfolio admins can delete certificates"
+on public.portfolio_certificates for delete to authenticated
+using ((select public.is_portfolio_admin()));
+
+-- Public URLs serve files from a public bucket. Writes and deletes remain admin-only.
+drop policy if exists "Portfolio admins can upload certificate PDFs" on storage.objects;
+create policy "Portfolio admins can upload certificate PDFs"
+on storage.objects for insert to authenticated
+with check (
+  bucket_id = 'certificates'
+  and (select public.is_portfolio_admin())
+);
+
+-- The Storage remove API needs both SELECT and DELETE access for the target object.
+drop policy if exists "Portfolio admins can select certificate objects" on storage.objects;
+create policy "Portfolio admins can select certificate objects"
+on storage.objects for select to authenticated
+using (
+  bucket_id = 'certificates'
+  and (select public.is_portfolio_admin())
+);
+
+drop policy if exists "Portfolio admins can delete certificate PDFs" on storage.objects;
+create policy "Portfolio admins can delete certificate PDFs"
+on storage.objects for delete to authenticated
+using (
+  bucket_id = 'certificates'
+  and (select public.is_portfolio_admin())
+);
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'portfolio_certificates'
+  ) then
+    alter publication supabase_realtime add table public.portfolio_certificates;
+  end if;
+end;
+$$;
+```
+
+### Administra certificados
+
+1. Abre `/admin/` e entra con tu usuario administrador.
+2. En el bloque **Certificados**, completa título, institución, fecha de expedición y selecciona el PDF; pulsa **Subir certificado**. El archivo se carga al bucket y sus datos y URL pública se registran en la tabla.
+3. En la biblioteca puedes editar título, emisor y fecha; también puedes elegir otro PDF y pulsar **Guardar certificado** para reemplazar el archivo. **Eliminar** quita el PDF del bucket y su registro de la tabla.
+4. La página pública se actualiza al recibir el evento de Supabase Realtime. Si la sección aún no aparece, comprueba que la tabla esté en **Database → Publications → supabase_realtime** y que el bucket `certificates` esté marcado como público.
+
+La URL pública de cada archivo no es privada. El bucket público permite abrir los certificados sin iniciar sesión; las políticas anteriores reservan las operaciones de carga y borrado a administradores autorizados. Supabase explica este modelo en [Buckets públicos y privados](https://supabase.com/docs/guides/storage/buckets/fundamentals), [control de acceso de Storage](https://supabase.com/docs/guides/storage/security/access-control) y [borrado de objetos](https://supabase.com/docs/guides/storage/management/delete-objects).
+
+## 5. Vista previa local
 
 Los módulos JavaScript ES no funcionan bien al abrir `index.html` con doble clic (`file://`). Sirve la carpeta por HTTP con una de estas opciones:
 
@@ -220,7 +327,7 @@ Los módulos JavaScript ES no funcionan bien al abrir `index.html` con doble cli
 - **Node.js:** desde la raíz del proyecto ejecuta `npx serve .` y abre la dirección local que muestre la terminal.
 - **Python:** desde la raíz ejecuta `python -m http.server 8000`, abre `http://localhost:8000` para el portafolio o `http://localhost:8000/admin/` para el panel.
 
-## 5. Publica gratis en GitHub y Vercel
+## 6. Publica gratis en GitHub y Vercel
 
 ### Sube el proyecto a GitHub
 
@@ -253,10 +360,11 @@ El proyecto es estático, por lo que no requiere servidor propio. Disponibilidad
 ## Notas técnicas
 
 - La preferencia de tema claro/oscuro se guarda en el navegador.
-- La navegación cambia entre cuatro vistas y adapta el menú a pantallas pequeñas.
+- La navegación cambia entre cinco vistas y adapta el menú a pantallas pequeñas.
 - El dashboard de `/admin/` usa Supabase Auth, una allowlist de UUID en `portfolio_admins` y RLS para limitar las escrituras; ocultar la ruta no se usa como mecanismo de seguridad.
 - La página pública se suscribe a Supabase Realtime para aplicar el contenido actualizado sin un nuevo deploy. La tabla debe estar añadida a la publicación `supabase_realtime`.
+- La sección Certificados usa `portfolio_certificates` y el bucket público `certificates`; solo los administradores autorizados pueden cargar o borrar archivos. Las URLs públicas permiten a cualquier visitante leer los PDF.
 - GitHub se consulta directamente desde el navegador usando su API pública. Si no hay perfil configurado, se muestra un estado inicial elegante y un enlace a GitHub.
 - El texto recibido desde Supabase y GitHub se escapa antes de renderizarse.
-- Los archivos PDF están ignorados por Git para evitar publicar documentos personales por accidente; agrega explícitamente cualquier CV descargable que quieras hacer público.
-- Para ofrecer un PDF descargable, agrega explícitamente el CV que quieras publicar y enlázalo desde el sitio. El PDF fuente que ya estaba en esta carpeta queda ignorado por Git y no se ofrece como descarga.
+- Los archivos PDF locales están ignorados por Git para evitar publicar documentos personales por accidente. Los certificados públicos se cargan desde `/admin/` directamente al bucket de Supabase y no se guardan en el repositorio.
+- El PDF fuente que ya estaba en esta carpeta queda ignorado por Git y no se ofrece como descarga.

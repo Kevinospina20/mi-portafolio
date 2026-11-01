@@ -1,5 +1,6 @@
 import { config } from "./config.js";
 import { checkAdminAccess, getSupabaseClient, loadContent, savePortfolioContent } from "./content.js";
+import { createCertificate, deleteCertificate, getCertificatePublicUrl, loadCertificates, subscribeToCertificates, updateCertificate } from "./certificates.js";
 
 const loginView = document.getElementById("login-view");
 const adminApp = document.getElementById("admin-app");
@@ -10,6 +11,8 @@ const saveState = document.getElementById("save-state");
 let supabase;
 let currentContent;
 let toastTimer;
+let certificateRows = [];
+let stopCertificateSubscription;
 
 function escapeHTML(value) {
   return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
@@ -73,6 +76,55 @@ function fillProfile(content) {
   renderList(document.getElementById("skills-editor"), "skills-template", profile.skills);
 }
 
+function renderCertificateEditor(rows) {
+  const list = document.getElementById("certificate-admin-list");
+  const count = document.getElementById("certificate-admin-count");
+  certificateRows = Array.isArray(rows) ? rows : [];
+  count.textContent = String(certificateRows.length).padStart(2, "0");
+  if (!certificateRows.length) {
+    list.innerHTML = '<p class="certificate-admin-empty">Todavía no has agregado certificados.</p>';
+    return;
+  }
+
+  list.innerHTML = certificateRows.map((certificate) => {
+    const url = getCertificatePublicUrl(certificate);
+    return `<article class="certificate-admin-row" data-certificate-id="${escapeHTML(certificate.id)}">
+      <div class="certificate-admin-row-top"><span class="certificate-admin-file-icon">PDF</span><div><p class="certificate-admin-row-title">${escapeHTML(certificate.title)}</p><a href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Abrir PDF ↗</a></div><button class="remove-button certificate-delete-button" type="button" data-certificate-action="delete">Eliminar</button></div>
+      <div class="field-grid certificate-admin-fields">
+        <label>Título<input data-certificate-field="title" required maxlength="160" value="${escapeHTML(certificate.title)}" /></label>
+        <label>Institución o emisor<input data-certificate-field="issuer" required maxlength="160" value="${escapeHTML(certificate.issuer)}" /></label>
+        <label>Fecha de expedición<input data-certificate-field="issueDate" type="date" required value="${escapeHTML(certificate.issue_date)}" /></label>
+        <label>Reemplazar archivo PDF (opcional)<input data-certificate-field="replacementFile" type="file" accept="application/pdf,.pdf" /></label>
+      </div>
+      <div class="certificate-admin-row-footer"><span class="certificate-row-status" role="status"></span><button class="certificate-save-button" type="button" data-certificate-action="save">Guardar certificado</button></div>
+    </article>`;
+  }).join("");
+}
+
+async function refreshAdminCertificates(rows) {
+  const status = document.getElementById("certificate-upload-status");
+  if (Array.isArray(rows)) {
+    renderCertificateEditor(rows);
+    return;
+  }
+  try {
+    renderCertificateEditor(await loadCertificates());
+  } catch (error) {
+    document.getElementById("certificate-admin-count").textContent = "—";
+    document.getElementById("certificate-admin-list").innerHTML = '<p class="certificate-admin-empty">No se pudo cargar la tabla de certificados. Sigue los pasos de Storage en el README y vuelve a cargar el panel.</p>';
+    if (status) status.textContent = error.message || "Revisa la tabla y las políticas de Supabase.";
+  }
+}
+
+async function startCertificateSubscription() {
+  if (stopCertificateSubscription) return;
+  try {
+    stopCertificateSubscription = await subscribeToCertificates((rows) => { void refreshAdminCertificates(rows); });
+  } catch (error) {
+    console.info("Actualización en vivo de certificados no disponible en el panel.", error);
+  }
+}
+
 function collectRows(container) {
   return [...container.querySelectorAll(".repeat-card")].map((card) => {
     const entry = {};
@@ -118,6 +170,8 @@ async function authorizeAndOpen(user) {
   document.getElementById("admin-email").textContent = user.email || "Sesión de administrador";
   loginView.hidden = true;
   adminApp.hidden = false;
+  void refreshAdminCertificates();
+  void startCertificateSubscription();
   return true;
 }
 
@@ -160,7 +214,11 @@ document.getElementById("logout-button").addEventListener("click", async () => {
   if (!supabase) return;
   const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) showToast("No fue posible cerrar la sesión. Inténtalo de nuevo.");
-  else showLogin("Sesión cerrada correctamente.", "success");
+  else {
+    if (stopCertificateSubscription) stopCertificateSubscription();
+    stopCertificateSubscription = null;
+    showLogin("Sesión cerrada correctamente.", "success");
+  }
 });
 
 contentForm.addEventListener("submit", async (event) => {
@@ -181,6 +239,69 @@ contentForm.addEventListener("submit", async (event) => {
     saveState.textContent = "No se pudo guardar";
     document.getElementById("save-message").textContent = error.message || "Revisa las políticas RLS y la conexión a Supabase.";
     showToast("No se guardaron los cambios. Revisa la configuración de Supabase.");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+const certificateUploadForm = document.getElementById("certificate-upload-form");
+certificateUploadForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const button = document.getElementById("certificate-upload-button");
+  const status = document.getElementById("certificate-upload-status");
+  const values = new FormData(certificateUploadForm);
+  button.disabled = true;
+  status.textContent = "Subiendo el PDF y guardando los datos…";
+  try {
+    await createCertificate({
+      title: String(values.get("title") || ""),
+      issuer: String(values.get("issuer") || ""),
+      issueDate: String(values.get("issueDate") || ""),
+      file: values.get("file"),
+    });
+    certificateUploadForm.reset();
+    status.textContent = "Certificado agregado. Ya está disponible en la página pública.";
+    showToast("Certificado publicado correctamente.");
+    await refreshAdminCertificates();
+  } catch (error) {
+    status.textContent = error.message || "No se pudo subir. Revisa el bucket y sus políticas de Supabase.";
+    showToast("No se pudo guardar el certificado.");
+  } finally {
+    button.disabled = false;
+  }
+});
+
+document.getElementById("certificate-admin-list").addEventListener("click", async (event) => {
+  const button = event.target.closest("[data-certificate-action]");
+  if (!button) return;
+  const card = button.closest("[data-certificate-id]");
+  const certificate = certificateRows.find((row) => row.id === card?.dataset.certificateId);
+  if (!certificate) return;
+  const rowStatus = card.querySelector(".certificate-row-status");
+  button.disabled = true;
+
+  try {
+    if (button.dataset.certificateAction === "save") {
+      const title = card.querySelector('[data-certificate-field="title"]').value.trim();
+      const issuer = card.querySelector('[data-certificate-field="issuer"]').value.trim();
+      const issueDate = card.querySelector('[data-certificate-field="issueDate"]').value;
+      const replacementFile = card.querySelector('[data-certificate-field="replacementFile"]').files[0] || null;
+      if (!title || !issuer || !issueDate) throw new Error("Completa el título, la institución y la fecha.");
+      rowStatus.textContent = "Guardando…";
+      const result = await updateCertificate(certificate, { title, issuer, issueDate, replacementFile });
+      rowStatus.textContent = result.cleanupWarning ? "Actualizado. No se pudo retirar el PDF anterior del bucket." : "Cambios guardados.";
+      showToast(result.cleanupWarning ? "Actualizado; revisa el PDF anterior en Storage." : "Certificado actualizado.");
+      await refreshAdminCertificates();
+    } else if (button.dataset.certificateAction === "delete") {
+      const confirmed = window.confirm(`¿Eliminar “${certificate.title}” y su PDF? Esta acción no se puede deshacer.`);
+      if (!confirmed) return;
+      rowStatus.textContent = "Eliminando…";
+      await deleteCertificate(certificate);
+      showToast("Certificado eliminado.");
+      await refreshAdminCertificates();
+    }
+  } catch (error) {
+    rowStatus.textContent = error.message || "No se pudo guardar el certificado.";
   } finally {
     button.disabled = false;
   }

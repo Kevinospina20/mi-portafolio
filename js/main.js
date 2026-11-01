@@ -1,5 +1,6 @@
 import { loadContent, subscribeToContent } from "./content.js";
 import { loadRepositories, renderRepositories } from "./github.js";
+import { getCertificatePublicUrl, loadCertificates, makeCertificateDownloadUrl, subscribeToCertificates } from "./certificates.js";
 
 const iconPaths = {
   Instagram: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/>',
@@ -94,6 +95,75 @@ function renderSocials(socials, username) {
   document.getElementById("mini-socials").innerHTML = finalList.map((social) => `<a class="mini-social" href="${escapeHTML(social.url)}" target="_blank" rel="noreferrer" aria-label="${escapeHTML(social.name)}"><svg viewBox="0 0 24 24" aria-hidden="true">${iconPaths[social.name] || iconPaths.GitHub}</svg></a>`).join("");
 }
 
+let certificateRows = [];
+const certificateGrid = document.getElementById("certificates-grid");
+const certificateDialog = document.getElementById("certificate-dialog");
+const certificateFrame = document.getElementById("certificate-frame");
+const certificateDialogTitle = document.getElementById("certificate-dialog-title");
+const certificateOpenTab = document.getElementById("certificate-open-tab");
+const certificateDownload = document.getElementById("certificate-download");
+
+function formatCertificateDate(value) {
+  if (!value) return "Fecha no disponible";
+  const [year, month, day] = value.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric" }).format(new Date(year, month - 1, day));
+}
+
+function renderCertificates(rows, unavailable = false) {
+  certificateRows = Array.isArray(rows) ? rows.filter((row) => getCertificatePublicUrl(row)) : [];
+  document.getElementById("certificate-count").textContent = `PDF · ${String(certificateRows.length).padStart(2, "0")}`;
+  if (unavailable) {
+    certificateGrid.innerHTML = '<div class="certificate-empty"><span class="certificate-empty-icon">PDF</span><h2>La biblioteca se está preparando</h2><p>Los certificados aparecerán aquí cuando se termine de configurar el almacenamiento.</p></div>';
+    return;
+  }
+  if (!certificateRows.length) {
+    certificateGrid.innerHTML = '<div class="certificate-empty"><span class="certificate-empty-icon">PDF</span><h2>Aprendizajes por compartir</h2><p>Pronto encontrarás aquí mis certificados académicos y profesionales.</p><span class="certificate-empty-note">NUEVOS DOCUMENTOS, NUEVAS HISTORIAS</span></div>';
+    return;
+  }
+
+  certificateGrid.innerHTML = certificateRows.map((certificate) => {
+    const url = getCertificatePublicUrl(certificate);
+    const title = escapeHTML(certificate.title || "Certificado");
+    const issuer = escapeHTML(certificate.issuer || "Institución emisora");
+    const date = escapeHTML(formatCertificateDate(certificate.issue_date));
+    return `<article class="certificate-card"><div class="certificate-preview"><iframe src="${escapeHTML(url)}#page=1&toolbar=0&navpanes=0&scrollbar=0" title="Vista previa del certificado: ${title}" loading="lazy" tabindex="-1" aria-hidden="true"></iframe><span class="certificate-preview-label"><span>PDF</span> VISTA PREVIA</span><span class="certificate-preview-glow"></span></div><div class="certificate-card-body"><p class="certificate-date">${date}</p><h2>${title}</h2><p class="certificate-issuer">${issuer}</p><div class="certificate-card-actions"><button class="button button-primary certificate-view-button" type="button" data-certificate-view="${escapeHTML(certificate.id)}">Ver certificado <span>↗</span></button><a class="certificate-quick-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Abrir PDF ↗</a></div></div></article>`;
+  }).join("");
+}
+
+certificateGrid.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-certificate-view]");
+  if (!button) return;
+  const certificate = certificateRows.find((row) => row.id === button.dataset.certificateView);
+  if (!certificate) return;
+  const url = getCertificatePublicUrl(certificate);
+  certificateDialogTitle.textContent = certificate.title || "Certificado";
+  certificateFrame.src = `${url}#toolbar=1&navpanes=0&view=FitH`;
+  certificateOpenTab.href = url;
+  certificateDownload.href = makeCertificateDownloadUrl(url, certificate.title);
+  certificateDialog.showModal();
+});
+
+document.getElementById("certificate-dialog-close").addEventListener("click", () => certificateDialog.close());
+certificateDialog.addEventListener("click", (event) => { if (event.target === certificateDialog) certificateDialog.close(); });
+certificateDialog.addEventListener("close", () => { certificateFrame.removeAttribute("src"); });
+
+async function initializeCertificates() {
+  let liveEvents = 0;
+  try {
+    await subscribeToCertificates((rows) => { liveEvents += 1; renderCertificates(rows); });
+  } catch (error) {
+    console.info("Actualización en vivo de certificados no disponible.", error);
+  }
+  const eventCountBeforeRead = liveEvents;
+  try {
+    const rows = await loadCertificates();
+    if (eventCountBeforeRead === liveEvents) renderCertificates(rows);
+  } catch (error) {
+    console.info("No se pudo cargar la lista de certificados.", error);
+    renderCertificates(null, true);
+  }
+}
+
 async function renderPortfolio(content) {
   const revision = ++portfolioRenderRevision;
   const profile = content.profile || {};
@@ -144,3 +214,4 @@ function showToast(message) {
 document.getElementById("current-year").textContent = new Date().getFullYear();
 setView(location.hash.slice(1) || "inicio");
 initialize();
+initializeCertificates();

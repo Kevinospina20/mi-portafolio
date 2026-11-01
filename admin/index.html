@@ -38,6 +38,21 @@
           <section class="editor-card"><div class="editor-heading"><div class="editor-icon icon-lime">✦</div><div><p class="section-kicker">CONOCIMIENTOS</p><h2>Habilidades</h2></div><span class="editor-number">05</span></div><div class="repeat-list skill-editor-list" id="skills-editor"></div><button class="add-button" type="button" data-add="skills">＋ Añadir habilidad</button></section>
           <div class="save-bar"><p id="save-message" role="status" aria-live="polite">Tus datos se guardan de forma segura en Supabase.</p><button class="button button-primary save-button" type="submit">Guardar cambios <span>↗</span></button></div>
         </form>
+        <section class="editor-card certificates-admin-card" id="certificates-admin" aria-labelledby="certificates-admin-title">
+          <div class="editor-heading"><div class="editor-icon icon-peach">PDF</div><div><p class="section-kicker">DOCUMENTOS PÚBLICOS</p><h2 id="certificates-admin-title">Certificados</h2></div><span class="editor-number">06</span></div>
+          <p class="editor-description">Sube certificados en PDF de hasta 10 MB. Los documentos del bucket público podrán abrirse por cualquier persona con el enlace.</p>
+          <form id="certificate-upload-form" class="certificate-upload-form">
+            <div class="field-grid">
+              <label>Título del certificado<input name="title" required maxlength="160" placeholder="Ej. Fundamentos de diseño UX" /></label>
+              <label>Institución o emisor<input name="issuer" required maxlength="160" placeholder="Ej. Universidad o plataforma" /></label>
+              <label>Fecha de expedición<input name="issueDate" type="date" required /></label>
+              <label>Archivo PDF<input name="file" type="file" accept="application/pdf,.pdf" required /></label>
+            </div>
+            <div class="certificate-upload-footer"><p id="certificate-upload-status" role="status" aria-live="polite">Los archivos se guardarán en Supabase Storage.</p><button class="button button-primary" type="submit" id="certificate-upload-button">Subir certificado <span>↗</span></button></div>
+          </form>
+          <div class="certificate-admin-list-heading"><div><p class="section-kicker">BIBLIOTECA</p><h3>Certificados guardados</h3></div><span id="certificate-admin-count">—</span></div>
+          <div class="certificate-admin-list" id="certificate-admin-list" aria-live="polite"><p class="certificate-admin-empty">Cargando certificados…</p></div>
+        </section>
         <footer class="admin-footer"><span>El panel está protegido con Supabase Auth + RLS.</span><a href="/">Volver al portafolio ↗</a></footer>
       </section>
     </main>
