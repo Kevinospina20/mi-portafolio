@@ -1,0 +1,10 @@
+.vercel/
+.env
+.env.*
+!.env.example
+node_modules/
+*.log
+*.pdf
+Captura de pantalla*.png
+Thumbs.db
+.DS_Store

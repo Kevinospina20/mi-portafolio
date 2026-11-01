@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d0c" />
+    <meta name="description" content="Portafolio, hoja de vida y perfil profesional de Kevin." />
+    <title>Kevin — Portafolio & hoja de vida</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23c9f36a'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial' font-size='34' font-weight='700' fill='%230b0d0c'%3EK%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="js/main.js"></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one" aria-hidden="true"></div>
+    <div class="ambient ambient-two" aria-hidden="true"></div>
+    <header class="topbar">
+      <a class="brand" href="#inicio" aria-label="Kevin, inicio"><span class="brand-mark">K</span><span>Kevin<span class="brand-dot">.</span></span></a>
+      <button class="menu-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="site-nav"><span></span><span></span></button>
+      <nav class="nav" id="site-nav" aria-label="Navegación principal">
+        <button class="nav-link active" data-view="inicio" aria-current="page">Inicio</button>
+        <button class="nav-link" data-view="trayectoria">Trayectoria</button>
+        <button class="nav-link" data-view="proyectos">Proyectos</button>
+        <button class="nav-link" data-view="contacto">Contacto</button>
+      </nav>
+      <button class="theme-toggle" aria-label="Cambiar a tema claro" title="Cambiar tema"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg></button>
+    </header>
+
+    <main class="page-shell">
+      <aside class="side-rail" aria-label="Información de perfil">
+        <div class="avatar-wrap"><div class="avatar">K<span class="avatar-spark">✳</span></div><span class="online-dot" aria-label="Disponible para conversar"></span></div>
+        <p class="rail-name" data-profile="name">Kevin</p>
+        <p class="rail-role" data-profile="role">Tu profesión, a tu manera</p>
+        <div class="rail-location"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span data-profile="location">Colombia</span></div>
+        <div class="rail-divider"></div>
+        <p class="rail-label">SOBRE MÍ</p>
+        <p class="rail-bio" data-profile="shortBio">Construyo ideas con intención, curiosidad y atención a los detalles.</p>
+        <div class="rail-divider"></div>
+        <p class="rail-label">ENCUÉNTRAME</p>
+        <div class="mini-socials" id="mini-socials"></div>
+        <div class="rail-bottom"><span class="status-pulse"></span> Disponible para oportunidades</div>
+      </aside>
+
+      <div class="content-column">
+        <section class="view active" id="view-inicio" data-view-panel="inicio" aria-labelledby="hero-title">
+          <div class="hero-grid">
+            <div class="hero-copy">
+              <div class="eyebrow"><span class="eyebrow-line"></span> PORTAFOLIO PERSONAL <span class="eyebrow-year">· 2025 / 26</span></div>
+              <h1 id="hero-title">Hola, soy <span class="name-highlight" data-profile="firstName">Kevin</span>.<br />Hago que las ideas<br /><span class="serif-accent">cobren vida.</span></h1>
+              <p class="hero-description" data-profile="intro">Un espacio para compartir mi recorrido, lo que me inspira y los proyectos que estoy construyendo.</p>
+              <div class="hero-actions"><button class="button button-primary" data-navigate="trayectoria">Conoce mi trayectoria <span aria-hidden="true">↗</span></button><button class="text-link" data-navigate="contacto">Hablemos <span aria-hidden="true">→</span></button></div>
+              <div class="hero-meta"><div class="meta-item"><span class="meta-number" data-stat="years">—</span><span class="meta-caption">AÑOS DE<br />EXPERIENCIA</span></div><span class="meta-separator"></span><div class="meta-item"><span class="meta-number" data-stat="projects">—</span><span class="meta-caption">PROYECTOS<br />REALIZADOS</span></div><span class="meta-separator"></span><div class="meta-item"><span class="meta-number" data-stat="focus">✦</span><span class="meta-caption">CRECER CON<br />PROPÓSITO</span></div></div>
+            </div>
+            <div class="hero-art" aria-label="Tarjeta visual de perfil"><div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div><div class="art-glow"></div><div class="art-card"><div class="art-card-top"><span class="art-label">CREATIVIDAD × TECNOLOGÍA</span><span class="art-menu">···</span></div><div class="art-monogram" data-monogram>k<span>.</span></div><div class="art-card-bottom"><div><span class="art-caption">UN POCO DE TODO</span><strong data-profile="role">Tu profesión, a tu manera</strong></div><span class="art-arrow">↗</span></div></div><div class="floating-tag tag-top"><span class="tag-star">✳</span> Curioso por naturaleza</div><div class="floating-tag tag-bottom"><span class="tag-pip"></span> Siempre aprendiendo</div><div class="art-index">01 / 04</div></div>
+          </div>
+          <div class="intro-strip"><div class="strip-icon">✳</div><p><strong>Un perfil, muchas posibilidades.</strong> Estoy dando forma a mi camino y este es el punto de partida para conocerlo.</p><button class="strip-link" data-navigate="trayectoria" aria-label="Ver hoja de vida">→</button></div>
+          <div class="section-heading"><div><p class="section-kicker">LO QUE ME MUEVE</p><h2>Un poco de mi mundo</h2></div><span class="heading-note">01 — Exploración</span></div>
+          <div class="interest-grid"><article class="interest-card"><span class="interest-index">01</span><div class="interest-icon icon-lime">✳</div><h3>Crear con propósito</h3><p>Me interesan las ideas que resuelven problemas reales y hacen la vida un poco más sencilla.</p><span class="card-glint"></span></article><article class="interest-card"><span class="interest-index">02</span><div class="interest-icon icon-violet">⌘</div><h3>Aprender siempre</h3><p>Explorar, experimentar y descubrir nuevas formas de hacer las cosas es parte del camino.</p><span class="card-glint"></span></article><article class="interest-card"><span class="interest-index">03</span><div class="interest-icon icon-peach">↗</div><h3>Hacerlo en equipo</h3><p>Las mejores soluciones aparecen cuando distintas perspectivas se encuentran.</p><span class="card-glint"></span></article></div>
+        </section>
+
+        <section class="view" id="view-trayectoria" data-view-panel="trayectoria" aria-labelledby="journey-title" hidden>
+          <div class="page-heading"><p class="section-kicker">EL CAMINO HASTA AQUÍ <span>02 / 04</span></p><h1 id="journey-title">Trayectoria<span class="heading-period">.</span></h1><p>Una mirada a las experiencias, aprendizajes y habilidades que forman mi recorrido.</p></div>
+          <div class="resume-columns"><div class="resume-main"><div class="section-heading compact"><div><p class="section-kicker">EXPERIENCIA</p><h2>Donde he aportado</h2></div></div><div class="timeline" id="experience-list"></div><div class="section-heading compact education-heading"><div><p class="section-kicker">FORMACIÓN</p><h2>Lo que he aprendido</h2></div></div><div class="timeline" id="education-list"></div></div><aside class="resume-aside"><div class="skill-card"><p class="section-kicker">HERRAMIENTAS & HABILIDADES</p><h3>Mi caja de herramientas</h3><p class="skill-intro">Cada reto es una oportunidad para aprender algo nuevo.</p><div class="skill-list" id="skills-list"></div></div><div class="quote-card"><div class="quote-mark">“</div><p data-profile="quote">Las buenas ideas toman forma cuando les damos el espacio para crecer.</p><span data-profile="name">Kevin</span></div><div class="download-card"><span class="download-icon">✳</span><span><strong>Hoja de vida en línea</strong><small>Consulta mi trayectoria aquí</small></span><span class="download-arrow">↗</span></div></aside></div>
+        </section>
+
+        <section class="view" id="view-proyectos" data-view-panel="proyectos" aria-labelledby="projects-title" hidden>
+          <div class="page-heading"><p class="section-kicker">EN LO QUE ESTOY TRABAJANDO <span>03 / 04</span></p><h1 id="projects-title">Proyectos<span class="heading-period">.</span></h1><p>Ideas en proceso, experimentos y cosas que algún día empezaron con un «¿y si…?».</p></div>
+          <div class="github-banner"><div class="github-banner-copy"><span class="github-kicker"><span class="github-live-dot"></span> CONECTADO CON GITHUB</span><h2>El código habla.<br /><span>Muy pronto, aquí.</span></h2><p>Mis repositorios públicos aparecerán automáticamente en cuanto publique mis primeros proyectos.</p><a class="github-profile-link" data-github-link href="https://github.com" target="_blank" rel="noreferrer">Visitar mi perfil de GitHub <span>↗</span></a></div><div class="github-visual" aria-hidden="true"><div class="github-ring ring-outer"></div><div class="github-ring ring-inner"></div><div class="github-mark">⌘</div><div class="github-spark spark-a">✦</div><div class="github-spark spark-b">✳</div><div class="github-stats"><span class="stat-dot"></span> REPOSITORIOS <strong id="repo-count">—</strong></div></div></div>
+          <div class="repo-header"><div><p class="section-kicker">EN MI PERFIL</p><h2>Últimos repositorios</h2></div><span class="repo-sort">Actualizados recientemente <span>⌄</span></span></div><div class="repo-grid" id="repo-grid"><div class="repo-loading"><span class="loader-dot"></span> Consultando GitHub…</div></div><p class="github-note" id="github-note">Los proyectos se actualizan automáticamente desde GitHub.</p>
+        </section>
+
+        <section class="view" id="view-contacto" data-view-panel="contacto" aria-labelledby="contact-title" hidden>
+          <div class="page-heading"><p class="section-kicker">UNA CONVERSACIÓN PUEDE SER EL COMIENZO <span>04 / 04</span></p><h1 id="contact-title">Hablemos<span class="heading-period">.</span></h1><p>¿Tienes una idea, una oportunidad o simplemente quieres saludar? Me encantará leerte.</p></div>
+          <div class="contact-layout"><div class="contact-card"><div class="contact-orb"></div><p class="section-kicker">ESTOY A UN MENSAJE</p><h2>Las buenas cosas<br /><span>empiezan hablando.</span></h2><p class="contact-copy">Puedes encontrarme en mis redes o escribirme directamente. Siempre estoy abierto a conocer personas y nuevas ideas.</p><a class="button button-primary email-button" data-email-link href="mailto:hola@ejemplo.com">Escríbeme un correo <span>↗</span></a><div class="contact-decoration">✳</div></div><div class="social-panel"><p class="section-kicker">SIGAMOS EN CONTACTO</p><h3>También estoy por aquí</h3><div class="social-list" id="social-list"></div><div class="social-hint">Elige tu plataforma favorita <span>↗</span></div></div></div>
+          <div class="contact-footer"><span class="footer-spark">✳</span><p>Gracias por pasar por aquí. <span>Que tengas un gran día.</span></p><span class="footer-signature">K.</span></div>
+        </section>
+        <footer class="site-footer"><span>© <span id="current-year"></span> <span data-profile="name">Kevin</span></span><span>Hecho con <b>♥</b> y un poco de curiosidad</span></footer>
+      </div>
+    </main>
+    <div class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

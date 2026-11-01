@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0d0c" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Administración — Kevin</title>
+    <link rel="stylesheet" href="../styles.css" />
+    <link rel="stylesheet" href="admin.css" />
+    <script type="module" src="../js/admin.js"></script>
+  </head>
+  <body class="admin-body">
+    <header class="admin-topbar"><a class="brand" href="/"><span class="brand-mark">K</span><span>Kevin<span class="brand-dot">.</span></span></a><span class="admin-mode"><i></i> PANEL DE ADMINISTRACIÓN</span><a class="back-link" href="/">← Volver al sitio</a></header>
+    <main class="admin-wrap">
+      <section class="admin-login" id="login-view" aria-labelledby="login-title">
+        <div class="admin-login-mark">K<span>.</span></div>
+        <p class="section-kicker">ACCESO PRIVADO</p>
+        <h1 id="login-title">Qué bueno verte.</h1>
+        <p class="login-intro">Inicia sesión con el usuario administrador que configuraste en Supabase.</p>
+        <form id="login-form" class="login-form">
+          <label>Correo electrónico<input name="email" type="email" autocomplete="username" required placeholder="tu@correo.com" /></label>
+          <label>Contraseña<input name="password" type="password" autocomplete="current-password" required placeholder="Tu contraseña" /></label>
+          <button class="button button-primary login-submit" type="submit">Iniciar sesión <span>→</span></button>
+        </form>
+        <p class="login-status" id="login-status" role="status" aria-live="polite">Configura Supabase y el usuario administrador para activar el acceso.</p>
+        <a class="login-back" href="/">← Regresar al portafolio</a>
+      </section>
+
+      <section class="admin-app" id="admin-app" hidden aria-labelledby="admin-title">
+        <div class="dashboard-heading"><div><p class="section-kicker">GESTIÓN DEL PORTAFOLIO <span>· CONTENIDO EN VIVO</span></p><h1 id="admin-title">Tu espacio<span>.</span></h1><p>Actualiza tu perfil aquí. Los cambios se guardan en Supabase y se publican sin volver a desplegar.</p></div><button class="logout-button" id="logout-button" type="button">Cerrar sesión <span>↗</span></button></div>
+        <div class="admin-statusbar"><span class="admin-status-dot"></span><span id="admin-email">Sesión activa</span><span class="status-separator">·</span><span id="save-state">Cambios guardados</span><a href="/" target="_blank" rel="noreferrer">Ver sitio público ↗</a></div>
+        <form id="content-form">
+          <section class="editor-card"><div class="editor-heading"><div class="editor-icon icon-lime">✳</div><div><p class="section-kicker">IDENTIDAD</p><h2>Sobre mí</h2></div><span class="editor-number">01</span></div><div class="field-grid"><label>Nombre completo<input name="name" data-profile="name" required /></label><label>Nombre corto<input name="firstName" data-profile="firstName" required /></label><label>Profesión o cargo<input name="role" data-profile="role" placeholder="Ej. Diseñador de producto" /></label><label>Ubicación<input name="location" data-profile="location" placeholder="Ciudad, país" /></label><label class="field-wide">Biografía breve<textarea name="shortBio" data-profile="shortBio" rows="2" maxlength="240"></textarea></label><label class="field-wide">Presentación principal<textarea name="intro" data-profile="intro" rows="3" maxlength="500"></textarea></label><label>Correo de contacto<input name="email" data-profile="email" type="email" placeholder="hola@tudominio.com" /></label><label>Frase personal<input name="quote" data-profile="quote" /></label><label>Años de experiencia<input data-stat="years" placeholder="Ej. 4+" /></label><label>Proyectos realizados<input data-stat="projects" placeholder="Ej. 12+" /></label></div></section>
+          <section class="editor-card"><div class="editor-heading"><div class="editor-icon icon-violet">↗</div><div><p class="section-kicker">CONTACTO</p><h2>Redes sociales</h2></div><span class="editor-number">02</span></div><p class="editor-description">Añade el enlace completo de cada perfil. Deja vacío el que no quieras mostrar.</p><div class="field-grid github-setting"><label>Usuario de GitHub (sin @)<input data-setting="githubUsername" placeholder="tu-usuario" /></label></div><div class="social-editor-grid" id="social-editor"></div></section>
+          <section class="editor-card"><div class="editor-heading"><div class="editor-icon icon-peach">⌘</div><div><p class="section-kicker">HOJA DE VIDA</p><h2>Experiencia profesional</h2></div><span class="editor-number">03</span></div><div class="repeat-list" id="experience-editor"></div><button class="add-button" type="button" data-add="experience">＋ Añadir experiencia</button></section>
+          <section class="editor-card"><div class="editor-heading"><div class="editor-icon icon-violet">✎</div><div><p class="section-kicker">FORMACIÓN</p><h2>Estudios y cursos</h2></div><span class="editor-number">04</span></div><div class="repeat-list" id="education-editor"></div><button class="add-button" type="button" data-add="education">＋ Añadir formación</button></section>
+          <section class="editor-card"><div class="editor-heading"><div class="editor-icon icon-lime">✦</div><div><p class="section-kicker">CONOCIMIENTOS</p><h2>Habilidades</h2></div><span class="editor-number">05</span></div><div class="repeat-list skill-editor-list" id="skills-editor"></div><button class="add-button" type="button" data-add="skills">＋ Añadir habilidad</button></section>
+          <div class="save-bar"><p id="save-message" role="status" aria-live="polite">Tus datos se guardan de forma segura en Supabase.</p><button class="button button-primary save-button" type="submit">Guardar cambios <span>↗</span></button></div>
+        </form>
+        <footer class="admin-footer"><span>El panel está protegido con Supabase Auth + RLS.</span><a href="/">Volver al portafolio ↗</a></footer>
+      </section>
+    </main>
+    <template id="experience-template"><article class="repeat-card"><div class="repeat-card-heading"><span class="repeat-label">EXPERIENCIA</span><button type="button" class="remove-button" aria-label="Eliminar elemento">Eliminar</button></div><div class="field-grid"><label>Periodo<input data-entry-field="period" placeholder="2022 — Actualidad" /></label><label>Cargo<input data-entry-field="title" placeholder="Cargo o función" /></label><label class="field-wide">Empresa u organización<input data-entry-field="organization" placeholder="Nombre de la empresa" /></label><label class="field-wide">Descripción<textarea data-entry-field="description" rows="2" placeholder="Aportes, responsabilidades o resultados"></textarea></label></div></article></template>
+    <template id="education-template"><article class="repeat-card"><div class="repeat-card-heading"><span class="repeat-label">FORMACIÓN</span><button type="button" class="remove-button" aria-label="Eliminar elemento">Eliminar</button></div><div class="field-grid"><label>Periodo<input data-entry-field="period" placeholder="2020 — 2024" /></label><label>Título o programa<input data-entry-field="title" placeholder="Nombre del programa" /></label><label class="field-wide">Institución<input data-entry-field="organization" placeholder="Institución educativa" /></label><label class="field-wide">Descripción<textarea data-entry-field="description" rows="2" placeholder="Énfasis, reconocimientos o formación complementaria"></textarea></label></div></article></template>
+    <template id="skills-template"><article class="repeat-card skill-repeat-card"><div class="repeat-card-heading"><span class="repeat-label">HABILIDAD</span><button type="button" class="remove-button" aria-label="Eliminar habilidad">Eliminar</button></div><div class="field-grid skill-fields"><label>Nombre<input data-entry-field="name" placeholder="Ej. JavaScript" /></label><label>Categoría<input data-entry-field="group" placeholder="TÉCNICAS" /></label><label>Nivel (0–100)<input data-entry-field="level" type="number" min="0" max="100" value="75" /></label></div></article></template>
+    <div class="admin-toast" id="admin-toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
