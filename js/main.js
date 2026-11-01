@@ -210,7 +210,7 @@ async function renderPortfolio(content) {
 
 async function initialize() {
   let liveEvents = 0;
-  try { await subscribeToContent((content) => { liveEvents += 1; void renderPortfolio(content); }); }
+  try { await subscribeToContent((content) => { liveEvents += 1; void renderPortfolio(content); void renderYouTube(content.youtubeChannelId || ""); }); }
   catch (error) { console.info("Actualización en vivo no disponible; el perfil se carga desde Supabase al abrir la página.", error); }
   const eventCountBeforeRead = liveEvents;
   const content = await loadContent();
@@ -224,13 +224,27 @@ async function renderYouTube(channelId) {
   target.innerHTML = '<p class="certificate-loading">Cargando videos recientes…</p>';
   try {
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
-    const response = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`);
-    if (!response.ok) throw new Error("No se pudo consultar el canal.");
-    const xml = new DOMParser().parseFromString(await response.text(), "application/xml");
+    let feedText = "";
+    let lastError;
+    for (const proxyUrl of [`https://proxy.cors.dev/${feedUrl}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`]) {
+      try {
+        const response = await fetch(proxyUrl);
+        if (!response.ok) throw new Error(`El proxy respondió ${response.status}.`);
+        feedText = await response.text();
+        if (!feedText.includes("<feed") && !feedText.includes(":feed")) throw new Error("La respuesta no contiene un feed Atom.");
+        break;
+      } catch (error) { lastError = error; }
+    }
+    if (!feedText) throw lastError || new Error("Los proxies no están disponibles.");
+    const xml = new DOMParser().parseFromString(feedText, "application/xml");
+    if (xml.querySelector("parsererror")) throw new Error("YouTube devolvió un feed XML inválido.");
     const entries = [...xml.querySelectorAll("entry")].slice(0, 13).map((entry) => ({ id: entry.querySelector("videoId")?.textContent, title: entry.querySelector("title")?.textContent || "Video", link: entry.querySelector("link")?.getAttribute("href") }));
     if (!entries.length) throw new Error("El canal no tiene videos públicos todavía.");
     target.innerHTML = `<article class="youtube-feature"><h2>${escapeHTML(entries[0].title)}</h2><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(entries[0].id)}" title="${escapeHTML(entries[0].title)}" loading="lazy" allowfullscreen></iframe></article><div class="youtube-grid">${entries.slice(1).map((video) => `<a class="youtube-video" href="${escapeHTML(video.link)}" target="_blank" rel="noopener noreferrer"><img src="https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg" alt="" loading="lazy"><strong>${escapeHTML(video.title)}</strong></a>`).join("")}</div>`;
-  } catch { target.innerHTML = '<p class="certificate-empty">No se pudieron cargar los videos. Revisa el ID del canal y vuelve a intentarlo.</p>'; }
+  } catch (error) {
+    console.warn("No se pudieron cargar videos de YouTube.", error);
+    target.innerHTML = `<p class="certificate-empty">No se pudieron cargar los videos. Verifica que el ID del canal comience por UC y que tenga videos públicos. Si el ID es correcto, el proxy RSS puede estar temporalmente fuera de servicio.</p>`;
+  }
 }
 
 let toastTimer;
