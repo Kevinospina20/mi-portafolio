@@ -393,3 +393,9 @@ create policy "Admins manage diploma PDFs" on storage.objects for all to authent
 ```
 
 El panel permite subir, editar el título y eliminar diplomas por separado de los certificados. El campo «ID del canal de YouTube» guarda `youtubeChannelId` en `portfolio_content`; se consulta el feed RSS mediante AllOrigins, servicio público externo sujeto a disponibilidad.
+
+#### YouTube Data API (respaldo recomendado para RSS no disponible)
+
+El endpoint RSS de YouTube puede devolver 404 aunque el canal exista; la integración admite una clave pública de YouTube Data API v3 como alternativa. Habilita YouTube Data API v3 en Google Cloud Console, crea una API key y restríngela a los dominios del portafolio (HTTP referrers) y a YouTube Data API v3. Después guárdala en `/admin/` junto al ID del canal. La clave se entrega al navegador y queda visible en el contenido público, por lo que debe tener esas restricciones de referrer/API; nunca uses una credencial OAuth ni una clave de servicio.
+
+La web consulta el playlist de subidas del canal y muestra hasta 13 videos recientes. La API oficial usa cuota del proyecto Google Cloud; revisa la cuota vigente antes de depender de ella en producción. Documentación: https://developers.google.com/youtube/v3/docs/channels/list y https://developers.google.com/youtube/v3/docs/playlistItems/list.

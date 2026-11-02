@@ -73,6 +73,7 @@ function fillProfile(content) {
   document.querySelectorAll("[data-stat]").forEach((input) => { input.value = profile.stats?.[input.dataset.stat] ?? ""; });
   document.querySelectorAll("[data-setting='githubUsername']").forEach((input) => { input.value = content.githubUsername === "TU_USUARIO_GITHUB" ? "" : (content.githubUsername || ""); });
   document.querySelectorAll("[data-setting='youtubeChannelId']").forEach((input) => { input.value = content.youtubeChannelId || ""; });
+  document.querySelectorAll("[data-setting='youtubeApiKey']").forEach((input) => { input.value = content.youtubeApiKey || ""; });
   renderSocialEditor(content.socials || config.socials);
   renderList(document.getElementById("experience-editor"), "experience-template", profile.experience);
   renderList(document.getElementById("education-editor"), "education-template", profile.education);

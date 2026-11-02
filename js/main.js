@@ -223,6 +223,22 @@ async function renderYouTube(channelId) {
   if (!channelId) return;
   target.innerHTML = '<p class="certificate-loading">Cargando videos recientes…</p>';
   try {
+    const currentContent = await loadContent();
+    if (currentContent.youtubeApiKey) {
+      const apiKey = currentContent.youtubeApiKey;
+      const channelResponse = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails&id=${encodeURIComponent(channelId)}&key=${encodeURIComponent(apiKey)}`);
+      const channelData = await channelResponse.json();
+      if (!channelResponse.ok) throw new Error(channelData.error?.message || `YouTube API respondió ${channelResponse.status}.`);
+      const uploadsId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
+      if (!uploadsId) throw new Error("La API no encontró la lista pública de videos del canal.");
+      const videosResponse = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&playlistId=${encodeURIComponent(uploadsId)}&maxResults=13&key=${encodeURIComponent(apiKey)}`);
+      const videosData = await videosResponse.json();
+      if (!videosResponse.ok) throw new Error(videosData.error?.message || `YouTube API respondió ${videosResponse.status}.`);
+      const videos = (videosData.items || []).map((item) => ({ id: item.contentDetails?.videoId || item.snippet?.resourceId?.videoId, title: item.snippet?.title || "Video", link: `https://www.youtube.com/watch?v=${encodeURIComponent(item.contentDetails?.videoId || item.snippet?.resourceId?.videoId || "")}` })).filter((item) => item.id);
+      if (!videos.length) throw new Error("El canal no tiene videos públicos disponibles.");
+      renderYouTubeVideos(target, videos);
+      return;
+    }
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
     let feedText = "";
     let lastError;
@@ -240,11 +256,15 @@ async function renderYouTube(channelId) {
     if (xml.querySelector("parsererror")) throw new Error("YouTube devolvió un feed XML inválido.");
     const entries = [...xml.querySelectorAll("entry")].slice(0, 13).map((entry) => ({ id: entry.querySelector("videoId")?.textContent, title: entry.querySelector("title")?.textContent || "Video", link: entry.querySelector("link")?.getAttribute("href") }));
     if (!entries.length) throw new Error("El canal no tiene videos públicos todavía.");
-    target.innerHTML = `<article class="youtube-feature"><h2>${escapeHTML(entries[0].title)}</h2><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(entries[0].id)}" title="${escapeHTML(entries[0].title)}" loading="lazy" allowfullscreen></iframe></article><div class="youtube-grid">${entries.slice(1).map((video) => `<a class="youtube-video" href="${escapeHTML(video.link)}" target="_blank" rel="noopener noreferrer"><img src="https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg" alt="" loading="lazy"><strong>${escapeHTML(video.title)}</strong></a>`).join("")}</div>`;
+    renderYouTubeVideos(target, entries);
   } catch (error) {
     console.warn("No se pudieron cargar videos de YouTube.", error);
     target.innerHTML = `<p class="certificate-empty">No se pudieron cargar los videos. Verifica que el ID del canal comience por UC y que tenga videos públicos. Si el ID es correcto, el proxy RSS puede estar temporalmente fuera de servicio.</p>`;
   }
+}
+
+function renderYouTubeVideos(target, videos) {
+  target.innerHTML = `<article class="youtube-feature"><h2>${escapeHTML(videos[0].title)}</h2><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videos[0].id)}" title="${escapeHTML(videos[0].title)}" loading="lazy" allowfullscreen></iframe></article><div class="youtube-grid">${videos.slice(1).map((video) => `<a class="youtube-video" href="${escapeHTML(video.link)}" target="_blank" rel="noopener noreferrer"><img src="https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg" alt="Miniatura de ${escapeHTML(video.title)}" loading="lazy"><strong>${escapeHTML(video.title)}</strong></a>`).join("")}</div>`;
 }
 
 let toastTimer;
