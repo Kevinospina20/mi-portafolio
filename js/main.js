@@ -44,6 +44,9 @@ const navigateSection = (step) => {
 document.getElementById("section-previous").addEventListener("click", () => navigateSection(-1));
 document.getElementById("section-next").addEventListener("click", () => navigateSection(1));
 document.querySelectorAll("[data-navigate]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.navigate)));
+document.querySelectorAll("[data-scroll-to]").forEach((button) => button.addEventListener("click", () => {
+  document.getElementById(button.dataset.scrollTo)?.scrollIntoView({ behavior: "smooth", block: "start" });
+}));
 menuToggle.addEventListener("click", () => {
   const open = menuToggle.getAttribute("aria-expanded") !== "true";
   menuToggle.setAttribute("aria-expanded", String(open));
@@ -133,7 +136,7 @@ function renderCertificates(rows, unavailable = false) {
     const title = escapeHTML(certificate.title || "Certificado");
     const issuer = escapeHTML(certificate.issuer || "Institución emisora");
     const date = escapeHTML(formatCertificateDate(certificate.issue_date));
-    return `<article class="certificate-card"><div class="certificate-preview"><iframe src="${escapeHTML(url)}#page=1&toolbar=0&navpanes=0&scrollbar=0" title="Vista previa del certificado: ${title}" loading="lazy" tabindex="-1" aria-hidden="true"></iframe><span class="certificate-preview-label"><span>PDF</span> VISTA PREVIA</span><span class="certificate-preview-glow"></span></div><div class="certificate-card-body"><p class="certificate-date">${date}</p><h2>${title}</h2><p class="certificate-issuer">${issuer}</p><div class="certificate-card-actions"><button class="button button-primary certificate-view-button" type="button" data-certificate-view="${escapeHTML(certificate.id)}">Ver certificado <span>↗</span></button><a class="certificate-quick-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Abrir PDF ↗</a></div></div></article>`;
+    return `<article class="certificate-card"><div class="certificate-preview pdf-cover" aria-label="Documento PDF: ${title}"><span class="pdf-cover-mark">PDF</span><span class="certificate-preview-label"><span>PDF</span> VISTA PREVIA</span><span class="certificate-preview-glow"></span></div><div class="certificate-card-body"><p class="certificate-date">${date}</p><h2>${title}</h2><p class="certificate-issuer">${issuer}</p><div class="certificate-card-actions"><button class="button button-primary certificate-view-button" type="button" data-certificate-view="${escapeHTML(certificate.id)}">Ver certificado <span>↗</span></button><a class="certificate-quick-link" href="${escapeHTML(url)}" target="_blank" rel="noopener noreferrer">Abrir PDF ↗</a></div></div></article>`;
   }).join("");
 }
 
@@ -174,7 +177,7 @@ async function initializeCertificates() {
     const grid = document.getElementById("diplomas-grid");
     const valid = diplomas.filter((row) => diplomaUrl(row));
     document.getElementById("diploma-count").textContent = `PDF · ${String(valid.length).padStart(2, "0")}`;
-    grid.innerHTML = valid.length ? valid.map((row) => `<article class="certificate-card"><div class="certificate-preview"><iframe src="${escapeHTML(diplomaUrl(row))}#page=1&toolbar=0" title="Vista previa: ${escapeHTML(row.title)}" loading="lazy"></iframe></div><div class="certificate-card-body"><h2>${escapeHTML(row.title)}</h2><button class="button button-primary" type="button" data-open-diploma="${escapeHTML(row.id)}">Ver diploma</button></div></article>`).join("") : '<div class="certificate-empty"><h2>Aún no hay diplomas</h2></div>';
+    grid.innerHTML = valid.length ? valid.map((row) => `<article class="certificate-card"><div class="certificate-preview pdf-cover" aria-label="Documento PDF: ${escapeHTML(row.title)}"><span class="pdf-cover-mark">PDF</span><span class="certificate-preview-label"><span>PDF</span> DIPLOMA</span></div><div class="certificate-card-body"><h2>${escapeHTML(row.title)}</h2><button class="button button-primary" type="button" data-open-diploma="${escapeHTML(row.id)}">Ver diploma</button></div></article>`).join("") : '<div class="certificate-empty"><h2>Aún no hay diplomas</h2></div>';
     grid.addEventListener("click", (event) => { const button = event.target.closest("[data-open-diploma]"); const row = valid.find((item) => item.id === button?.dataset.openDiploma); if (!row) return; const url = diplomaUrl(row); certificateDialogTitle.textContent = row.title; certificateFrame.src = `${url}#toolbar=1&navpanes=0&view=FitH`; certificateOpenTab.href = url; certificateDownload.href = makeCertificateDownloadUrl(url, row.title); certificateDialog.showModal(); });
   } catch { document.getElementById("diplomas-grid").innerHTML = '<div class="certificate-empty"><h2>Diplomas en preparación</h2></div>'; }
 }
