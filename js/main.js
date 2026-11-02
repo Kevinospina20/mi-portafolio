@@ -44,9 +44,6 @@ const navigateSection = (step) => {
 document.getElementById("section-previous").addEventListener("click", () => navigateSection(-1));
 document.getElementById("section-next").addEventListener("click", () => navigateSection(1));
 document.querySelectorAll("[data-navigate]").forEach((button) => button.addEventListener("click", () => setView(button.dataset.navigate)));
-document.querySelectorAll("[data-scroll-to]").forEach((button) => button.addEventListener("click", () => {
-  document.getElementById(button.dataset.scrollTo)?.scrollIntoView({ behavior: "smooth", block: "start" });
-}));
 menuToggle.addEventListener("click", () => {
   const open = menuToggle.getAttribute("aria-expanded") !== "true";
   menuToggle.setAttribute("aria-expanded", String(open));
